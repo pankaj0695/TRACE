@@ -1,0 +1,81 @@
+:root {
+  /* Surfaces */
+  --lime: #e1ff8c;
+  --lime-deep: #cdee6a;
+  --paper: #f3f0ea;
+  --card: #e9e5df;
+  --card-raised: #f7f5f1;
+  --stone: #c9c0b4;
+  --ink: #1c1c1c;
+  --ink-deep: #0e0e0e;
+  --slate: #6b7383;
+
+  /* Text */
+  --text: #1c1c1c;
+  --text-2: #3d3d3a;
+  --text-muted: #5f6470;
+
+  /* Semantic (status) */
+  --ok: #3e8a5a;
+  --ok-tint: #e5f1e0;
+  --warn: #9a6512;
+  --warn-tint: #f8ecd2;
+  --danger: #c23b27;
+  --danger-tint: #fae3dd;
+  --info-tint: #eef7cf;
+
+  /* Data (validated categorical for the reviewer graph) */
+  --data-ring: #d9452f;
+  --data-loyal: #2f6fb0;
+  --data-store: #5c7a1f;
+
+  /* Type */
+  --font-display: "JetBrains Mono", ui-monospace, monospace;
+  --font-body: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --fs-hero: clamp(2.2rem, 4vw, 3.4rem);
+  --fs-title: 1.35rem;
+  --fs-stat: 2rem;
+  --fs-body: 1rem;
+  --fs-sm: 0.875rem;
+  --fs-xs: 0.78rem;
+  --tracking-label: 0.14em;
+
+  /* Structure */
+  --border: 3px solid var(--ink);
+  --border-thin: 2px solid var(--ink);
+  --hairline: 1px solid rgba(28, 28, 28, 0.14);
+  --shadow-press: 4px 4px 0 var(--ink);
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --topbar-h: 76px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --t-fast: 0.15s var(--ease);
+  --t-base: 0.25s var(--ease);
+}
+
+@keyframes pulse {
+  50% { opacity: 0.35; }
+}
+
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
