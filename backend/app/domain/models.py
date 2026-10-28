@@ -122,6 +122,7 @@ class Analysis(BaseModel):
     assessment: Assessment
     report: TrustReport
     created_at: datetime
+    lineage: dict[str, Any] = Field(default_factory=dict, description="Data-governance provenance of this run")
 
 
 class AnalysisSummary(BaseModel):

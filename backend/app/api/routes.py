@@ -1,29 +1,35 @@
 import csv
 import io
 import json
-from statistics import mean
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 
 from app.container import Container
-from app.domain.models import Analysis, Product, RiskTier
+from app.domain.models import Analysis, Product
 from app.pipeline.graph import STAGES
 from app.retrieval.search import SearchResult
+from app.services.stats import dashboard_stats
 
 router = APIRouter(prefix="/api")
 
 
 def container(request: Request) -> Container:
-    return request.app.state.container
+    c = getattr(request.app.state, "container", None)
+    if c is None:
+        raise HTTPException(503, getattr(request.app.state, "startup_error", None) or "Service is starting")
+    return c
 
 
 ContainerDep = Annotated[Container, Depends(container)]
 
 
 @router.get("/health")
-def health(c: ContainerDep) -> dict:
+def health(request: Request) -> dict:
+    c = getattr(request.app.state, "container", None)
+    if c is None:
+        return {"status": "degraded", "error": getattr(request.app.state, "startup_error", None) or "starting"}
     return {
         "status": "ok",
         "graph_backend": c.graph.name,
@@ -31,23 +37,13 @@ def health(c: ContainerDep) -> dict:
         "llm": c.llm.name,
         "indexed_reviews": len(c.index),
         "stages": STAGES,
+        "mcp": {"enabled": c.settings.mcp_enabled, "endpoint": "/mcp"},
     }
 
 
 @router.get("/stats")
 def stats(c: ContainerDep) -> dict:
-    summaries = c.analysis.summaries()
-    tiers = {t.value: 0 for t in RiskTier if t != RiskTier.INSUFFICIENT}
-    for s in summaries:
-        tiers[s.tier.value] = tiers.get(s.tier.value, 0) + 1
-    return {
-        **c.products.counts(),
-        "analyzed": len(summaries),
-        "flagged": tiers["high"] + tiers["critical"],
-        "avg_trust": round(100 - mean(s.risk_score for s in summaries), 1) if summaries else None,
-        "tiers": tiers,
-        "recent": [{"product_id": s.product_id, "risk": s.risk_score} for s in summaries[-24:]],
-    }
+    return dashboard_stats(c)
 
 
 @router.get("/products")

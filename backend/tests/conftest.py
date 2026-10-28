@@ -58,4 +58,4 @@ def settings(tmp_path) -> Settings:
     db = Database(tmp_path / "trace.db")
     db.init_schema()
     _seed(db)
-    return Settings(db_path=db.path, embedder="tfidf", gemini_api_key=None, graph_backend="networkx")
+    return Settings(db_path=db.path, embedder="tfidf", gemini_api_key=None, graph_backend="networkx", approved_processors="")

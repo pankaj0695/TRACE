@@ -10,6 +10,7 @@ Usage (from backend/):
 """
 
 import argparse
+import hashlib
 import html
 import json
 import random
@@ -23,6 +24,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from app.core.config import BACKEND_DIR  # noqa: E402
 from app.data.database import Database  # noqa: E402
 
 DAY_MS = 86_400_000
@@ -42,10 +44,15 @@ def stream(path: Path) -> Iterator[dict]:
                 continue
 
 
+SUPPRESSED: set[str] = set()  # sha256(user_id) of data subjects who requested erasure; never re-ingested
+
+
 def unique_reviews(path: Path) -> Iterator[dict]:
     """The raw dump repeats a review once per product variant; keep one per (user, product, time)."""
     seen: set[int] = set()
     for r in stream(path):
+        if SUPPRESSED and hashlib.sha256(r["user_id"].encode()).hexdigest() in SUPPRESSED:
+            continue
         key = hash((r["user_id"], r["parent_asin"], r["timestamp"]))
         if key not in seen:
             seen.add(key)
@@ -125,13 +132,18 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--reviews", type=Path, required=True)
     ap.add_argument("--meta", type=Path, required=True)
-    ap.add_argument("--out", type=Path, default=Path("../data/trace.db"))
+    ap.add_argument("--out", type=Path, default=BACKEND_DIR.parent / "data" / "trace.db")
     ap.add_argument("--focus", type=int, default=400, help="number of products to monitor")
     ap.add_argument("--min-reviews", type=int, default=30)
     ap.add_argument("--max-reviews", type=int, default=2500)
     ap.add_argument("--history-cap", type=int, default=40, help="max extra reviews kept per reviewer")
     ap.add_argument("--seed", type=int, default=7)
+    ap.add_argument("--suppress", type=Path, default=BACKEND_DIR.parent / "data" / "erasure_suppression.txt",
+                    help="hashes of erased data subjects (written by the erasure tool)")
     args = ap.parse_args()
+    if args.suppress.exists():
+        SUPPRESSED.update(args.suppress.read_text().split())
+        log(f"honouring {len(SUPPRESSED)} erasure request(s) from {args.suppress}")
 
     if args.out.exists():
         args.out.unlink()

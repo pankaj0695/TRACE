@@ -18,6 +18,10 @@ class LexicalIndex:
     """TF-IDF inverted index over every review in the working set (fast recall stage of search)."""
 
     def __init__(self, rows: list[tuple[int, str, str, str]]):
+        self.rebuild(rows)
+
+    def rebuild(self, rows: list[tuple[int, str, str, str]]) -> None:
+        """(Re)build in place so agents holding a reference see the new corpus (used after erasure)."""
         self.ids = np.array([r[0] for r in rows], dtype=np.int64)
         self.products = np.array([r[1] for r in rows], dtype=object)
         self.users = np.array([r[2] for r in rows], dtype=object)

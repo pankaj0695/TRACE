@@ -1,0 +1,51 @@
+# ---- Data: raw dumps and derived databases are NOT for GitHub ---------------------------------------------------
+# Amazon Reviews'23 dumps (GBs, third-party licensed) and everything built from them (reviews incl. text/reviewer ids,
+# saved analyses, audit log, egress ledger, erasure register). Rebuild locally: see data/README.md.
+/data/*
+!/data/README.md
+*.jsonl
+*.jsonl.gz
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+erasure_suppression.txt
+
+# ---- Secrets -------------------------------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ---- Python --------------------------------------------------------------------------------------------------
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# ---- Node / frontend ----------------------------------------------------------------------------------------
+node_modules/
+dist/
+frontend/dist/
+.vite/
+*.log
+
+# ---- OS / editor / archive junk ---------------------------------------------------------------------------------
+.DS_Store
+__MACOSX/
+Thumbs.db
+desktop.ini
+~$*
+.idea/
+.vscode/
+*.swp

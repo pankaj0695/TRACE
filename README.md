@@ -21,7 +21,7 @@ ingestion ──► anomaly ───────┐
 
 ```bash
 cd backend
-python -m venv .venv && source venv/bin/activate
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env            # add GEMINI_API_KEY (optional — rules-only reports without it)
 
@@ -48,6 +48,38 @@ docker run -d -p 7474:7474 -p 7687:7687 -e NEO4J_AUTH=neo4j/trace-password neo4j
 ```
 
 If Neo4j or Gemini is unreachable the app falls back to NetworkX / rule-based reports instead of failing.
+
+## MCP server (agents as governed tools)
+
+TRACE speaks the Model Context Protocol, so any MCP client can inspect listings, run the agent pipeline and
+record human reviewer decisions - under role-based access, rate limits, PII redaction and a tamper-evident audit log.
+
+```bash
+# backend/.env
+TRACE_MCP_API_KEYS=<long-random-token>:analyst:ops-bot,<long-random-token>:reviewer:rita
+uvicorn app.main:app --port 8000      # Streamable HTTP at http://localhost:8000/mcp  (Authorization: Bearer ...)
+python -m app.mcp.stdio               # or stdio for local clients (set TRACE_MCP_STDIO_ROLE)
+```
+
+Details, tool catalogue and access controls: [docs/MCP_AND_GOVERNANCE.md](docs/MCP_AND_GOVERNANCE.md).
+
+## Data governance
+
+Classification catalogue, purpose limitation, lineage on every analysis, quality checks, retention, data-subject
+access/erasure, and an approval-gated, redacting, ledgered path for anything sent to a third-party LLM:
+[docs/DATA_GOVERNANCE.md](docs/DATA_GOVERNANCE.md). **Prototype default:** Gemini and Neo4j are pre-approved
+(`TRACE_APPROVED_PROCESSORS=gemini,neo4j`) so the demo works out of the box; redaction and the egress ledger still apply.
+For the production build with a local LLM and database, set `TRACE_APPROVED_PROCESSORS=` (empty) to forbid any external flow.
+
+```bash
+python -m scripts.governance quality              # dataset quality + catalogue coverage
+python -m scripts.governance retention            # dry-run; add --execute to delete expired data
+```
+
+## Data location
+
+`trace.db` is looked up in `TRACE_DATA_DIR`, `<repo>/data`, `backend/data`, and the current directory (first hit wins);
+or set `TRACE_DB_PATH`. If it is missing the API starts in a degraded state and `/api/health` lists where it looked.
 
 ## Tests
 

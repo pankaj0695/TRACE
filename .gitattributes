@@ -1,0 +1,9 @@
+# Normalise line endings so Windows and macOS contributors do not produce noisy diffs
+* text=auto
+*.py text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.md text eol=lf
+*.png binary
+*.docx binary
+*.db binary

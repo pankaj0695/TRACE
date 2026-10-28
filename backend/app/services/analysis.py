@@ -17,8 +17,14 @@ class AnalysisService:
     """Runs the agent pipeline, streams stage progress and persists the finished analysis."""
 
     def __init__(
-        self, pipeline, router: Callable[[dict], list[str]], products: ProductRepository, analyses: AnalysisRepository
+        self,
+        pipeline,
+        router: Callable[[dict], list[str]],
+        products: ProductRepository,
+        analyses: AnalysisRepository,
+        lineage: Callable[[dict], dict] | None = None,
     ):
+        self.lineage = lineage
         self.pipeline = pipeline
         self.router = router
         self.products = products
@@ -86,6 +92,7 @@ class AnalysisService:
             assessment=state["assessment"],
             report=state["report"],
             created_at=utcnow(),
+            lineage=self.lineage({**state, "signals": signals}) if self.lineage else {},
         )
         if analysis.assessment.tier != RiskTier.INSUFFICIENT:
             self.analyses.save(analysis)

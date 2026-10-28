@@ -42,6 +42,9 @@ class GraphStore(Protocol):
     def co_review_pairs(self, product_id: str, min_shared: int) -> list[CoReviewPair]:
         """Reviewer pairs of `product_id` who also reviewed >= min_shared other products together."""
 
+    def delete_reviewer(self, user_id: str) -> None:
+        """Remove a reviewer and all their review edges (data-subject erasure)."""
+
     def close(self) -> None: ...
 
 
@@ -86,6 +89,10 @@ class NetworkXGraphStore:
                 for b in reviewers[i + 1 :]:
                     shared[(a, b)] += 1
         return [CoReviewPair(a, b, n) for (a, b), n in shared.items() if n >= min_shared]
+
+    def delete_reviewer(self, user_id: str) -> None:
+        if ("r", user_id) in self.graph:
+            self.graph.remove_node(("r", user_id))
 
     def close(self) -> None:
         pass
@@ -143,6 +150,10 @@ class Neo4jGraphStore:
     def co_review_pairs(self, product_id: str, min_shared: int) -> list[CoReviewPair]:
         with self.driver.session() as s:
             return [CoReviewPair(**r.data()) for r in s.run(self._CO_REVIEW, pid=product_id, min_shared=min_shared)]
+
+    def delete_reviewer(self, user_id: str) -> None:
+        with self.driver.session() as s:
+            s.run("MATCH (u:Reviewer {id: $id}) DETACH DELETE u", id=user_id)
 
     def close(self) -> None:
         self.driver.close()
