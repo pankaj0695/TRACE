@@ -1,4 +1,5 @@
-const BASE = '/api'
+// Dev: Vite proxies /api to the backend. Production: set VITE_API_URL to the Cloud Run URL.
+const BASE = `${(import.meta.env.VITE_API_URL || '').replace(/\/$/, '')}/api`
 
 export class ApiError extends Error {
   constructor(status, message) {
