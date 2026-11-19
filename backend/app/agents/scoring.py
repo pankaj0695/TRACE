@@ -1,7 +1,9 @@
 from app.domain.models import AgentSignal, Assessment, RiskTier
 from app.pipeline.state import PipelineState
 
-DETECTOR_WEIGHTS = {"anomaly": 0.35, "authenticity": 0.30, "network": 0.35}
+DETECTOR_WEIGHTS = {"anomaly": 0.35, "authenticity": 0.30, "network": 0.35, "investigator": 0.20}
+# Signals that only exist on some runs: their absence is not degradation, and they do not count towards "detectors disagree".
+OPTIONAL = {"investigator"}
 
 
 class TrustScoringAgent:
@@ -34,10 +36,12 @@ class TrustScoringAgent:
         # A single strong, confident detector should not be averaged away by quiet ones.
         peak_risk = max(usable[k].risk * usable[k].confidence for k in usable)
         risk = 100 * (mean_risk + self.peak_boost * max(0.0, peak_risk - mean_risk))
-        confident = [s.risk for s in usable.values() if s.confidence >= 0.5]
+        confident = [s.risk for k, s in usable.items() if s.confidence >= 0.5 and k not in OPTIONAL]
         conflict = len(confident) > 1 and max(confident) - min(confident) >= self.conflict_gap
         tier = RiskTier.from_score(risk)
-        degraded = any(signals.get(k) is None or signals[k].status != "ok" for k in self.weights)
+        degraded = any(
+            signals.get(k) is None or signals[k].status != "ok" for k in self.weights if k not in OPTIONAL
+        )
         return Assessment(
             risk_score=round(risk, 1),
             trust_score=round(100 - risk, 1),

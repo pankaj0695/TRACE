@@ -1,17 +1,37 @@
-import { Check, ChevronDown, CircleDashed, LoaderCircle, Wrench, X } from 'lucide-react'
+import { Check, ChevronDown, CircleDashed, CornerLeftUp, LoaderCircle, Wrench, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 import { SeverityBadge } from '../../components/ui'
 import { duration, seconds, useNow } from '../../hooks/useNow'
 import { AGENTS } from '../../lib/format'
 import { DETECTORS, STAGES, TOOLS } from './stages'
+import { VerdictBadge } from './Investigation'
 
 const ICON = { running: LoaderCircle, ok: Check, failed: X, skipped: CircleDashed, idle: CircleDashed }
 const LABEL = { running: 'running', ok: 'done', failed: 'failed', skipped: 'skipped', idle: 'queued' }
+const CONDITIONAL = { investigator: { skipped: 'not needed', idle: 'if needed' } }
 
 const fmtMetric = (v) => (typeof v === 'number' ? (Number.isInteger(v) ? v : +v.toFixed(3)) : typeof v === 'boolean' ? String(v) : null)
 
+function InvestigatorOutput({ signal }) {
+  const log = signal.artifacts?.log ?? []
+  return (
+    <div className="stage-output">
+      <VerdictBadge verdict={signal.metrics?.verdict} />
+      <ol className="inv-steps">
+        {log.map((s, i) => (
+          <li key={i} className={`inv-step inv-${s.status}`}>
+            <code>{s.tool}()</code> <span className="fine">{s.reason}</span>
+          </li>
+        ))}
+      </ol>
+      {signal.metrics?.unresolved_reason && <p className="fine">Why unresolved: {signal.metrics.unresolved_reason}</p>}
+    </div>
+  )
+}
+
 function StageOutput({ signal }) {
+  if (signal.agent === 'investigator') return <InvestigatorOutput signal={signal} />
   const metrics = Object.entries(signal.metrics ?? {})
     .map(([k, v]) => [k, fmtMetric(v)])
     .filter(([, v]) => v !== null)
@@ -71,7 +91,7 @@ function Stage({ name, index, state, now, parallel }) {
             {elapsed != null && status !== 'idle' && (
               <span className="stage-time">{status === 'running' ? seconds(elapsed) : duration(elapsed)}</span>
             )}
-            <span className={`stage-state stage-state-${status}`}>{LABEL[status] ?? status}</span>
+            <span className={`stage-state stage-state-${status}`}>{CONDITIONAL[name]?.[status] ?? LABEL[status] ?? status}</span>
             {expandable && <ChevronDown size={14} className={`chev ${open ? 'chev-open' : ''}`} aria-hidden />}
           </span>
         </button>
@@ -97,6 +117,8 @@ function Stage({ name, index, state, now, parallel }) {
                   </span>
                 ))}
               </span>
+            ) : name === 'investigator' && status === 'skipped' ? (
+              'Not escalated: evidence was consistent.'
             ) : (
               signal?.summary ?? AGENTS[name].role
             )}
@@ -147,6 +169,12 @@ export function AgentPipeline({ stages, running, startedAt }) {
           <ol className="pipeline fan-list">{DETECTORS.map(render)}</ol>
         </li>
         {render('scoring')}
+        <li className={`fan fan-loop ${stages.investigator.status === 'skipped' ? 'fan-off' : ''}`} aria-label="Escalation: only on ambiguous evidence, then re-score">
+          <span className="fan-label">
+            <CornerLeftUp size={11} aria-hidden /> escalation · re-scores
+          </span>
+          <ol className="pipeline fan-list">{render('investigator')}</ol>
+        </li>
         {render('orchestrator')}
       </ol>
     </section>

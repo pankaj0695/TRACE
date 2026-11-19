@@ -57,6 +57,11 @@ class Settings(BaseSettings):
 
     min_reviews: int = 8
 
+    # --- Investigator agent (see INVESTIGATOR_AGENT.md) ---------------------------------------------------------
+    investigation_enabled: bool = True
+    investigation_max_rounds: int = Field(1, ge=0, le=3)
+    investigation_max_tool_calls: int = Field(4, ge=1, le=8)
+
     # --- MCP server & governance (see docs/GOVERNANCE.md) -------------------------------------------------
     mcp_enabled: bool = True
     # "token:role:principal" entries, comma separated. Roles: viewer < analyst < reviewer < admin.

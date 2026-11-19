@@ -30,5 +30,6 @@ export const AGENTS = {
   authenticity: { label: 'Authenticity', role: 'Duplicates & templates (IR)' },
   network: { label: 'Network', role: 'Reviewer knowledge graph' },
   scoring: { label: 'Trust scoring', role: 'Weighted aggregation' },
+  investigator: { label: 'Investigator', role: 'Follow-up on ambiguous evidence' },
   orchestrator: { label: 'Orchestrator', role: 'Resolve & report' },
 }

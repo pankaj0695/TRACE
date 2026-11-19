@@ -1,10 +1,12 @@
-import { ArrowRight, Check, CornerDownRight, Flag, Play, TriangleAlert, X } from 'lucide-react'
+import { ArrowRight, Check, CornerDownRight, Flag, Play, TriangleAlert, Wrench, X } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useMemo, useRef } from 'react'
 import { duration, seconds, useNow } from '../../hooks/useNow'
 import { eventsFromAnalysis, STAGES } from './stages'
 
-const GLYPH = { started: Play, call: ArrowRight, return: CornerDownRight, result: Check, error: TriangleAlert }
+const returns0 = (events) => events.filter((e) => e.kind === 'return')
+
+const GLYPH = { started: Play, call: ArrowRight, tool: Wrench, return: CornerDownRight, result: Check, error: TriangleAlert }
 
 function Line({ ev }) {
   const Icon = ev.status === 'failed' ? X : (GLYPH[ev.kind] ?? ArrowRight)
@@ -19,6 +21,7 @@ function Line({ ev }) {
       <Icon size={13} strokeWidth={2.4} className="log-icon" aria-hidden />
       <span className="log-text">
         {ev.kind === 'call' && <span className="log-verb">call </span>}
+        {ev.kind === 'tool' && <span className="log-verb">  tool </span>}
         {ev.kind === 'return' && <span className="log-verb">{ev.stage} → </span>}
         {ev.text}
         {ev.kind === 'return' && ev.ms != null && <span className="log-dim"> · {duration(ev.ms)}</span>}
@@ -39,10 +42,11 @@ export function ExecutionTab({ run, analysis, running, onOpenReport }) {
   const live = run.events.length > 0
   const events = useMemo(() => (live ? run.events : eventsFromAnalysis(analysis)), [live, run.events, analysis])
   const total = running ? now - run.startedAt : live ? (run.finishedAt ?? now) - run.startedAt : (events.at(-1)?.at ?? 0)
-  const calls = events.filter((e) => e.kind === 'call').length
+  const calls = events.filter((e) => e.kind === 'call' || e.kind === 'tool').length
+  const stagesDone = new Set(returns0(events).map((e) => e.stage)).size
   const returns = events.filter((e) => e.kind === 'return')
   const failed = returns.filter((e) => e.status === 'failed').length
-  const pct = running ? Math.round((returns.length / STAGES.length) * 100) : 100
+  const pct = running ? Math.round((Math.min(stagesDone, STAGES.length - 1) / STAGES.length) * 100) : 100
 
   useEffect(() => {
     if (running) endRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
@@ -63,9 +67,7 @@ export function ExecutionTab({ run, analysis, running, onOpenReport }) {
         </div>
         <div>
           <span className="exec-label">Tool calls</span>
-          <strong>
-            {returns.length}/{running ? STAGES.length : calls || returns.length}
-          </strong>
+          <strong>{calls}</strong>
         </div>
         <div>
           <span className="exec-label">Findings</span>

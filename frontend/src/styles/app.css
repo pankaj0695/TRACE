@@ -502,6 +502,30 @@ a.listing-title:hover { text-decoration: underline; }
 .exec-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); }
 .exec-actions .btn { height: 44px; }
 
+
+/* ── Investigator ─────────────────────────────────── */
+.fan-loop { border-left-style: solid; border-left-color: var(--ink); }
+.fan-loop .fan-label { display: inline-flex; align-items: center; gap: 4px; }
+.fan-off { border-left-color: var(--stone); border-left-style: dashed; }
+.stage-state-skipped { border-style: dashed; }
+.inv-steps { margin: var(--space-2) 0 0; padding-left: var(--space-5); display: grid; gap: 4px; font-size: var(--fs-sm); }
+.inv-steps code, .inv-log code { font: 500 var(--fs-xs) var(--font-mono); }
+.inv-rejected code, .inv-failed code { color: var(--danger); text-decoration: line-through; }
+.investigation { margin: var(--space-6) 0 0; padding: var(--space-4); background: var(--card); border: var(--border-thin); display: grid; gap: var(--space-3); }
+.investigation-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
+.investigation-title { display: inline-flex; align-items: center; gap: var(--space-2); font: 700 1rem var(--font-display); }
+.investigation-summary { margin: 0; color: var(--text-2); }
+.investigation-reason { margin: 0; padding: var(--space-2) var(--space-3); background: var(--warn-tint); border: 1.5px solid var(--ink); font-size: var(--fs-sm); }
+.inv-log { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); counter-reset: step; }
+.inv-log-item { padding: var(--space-2) var(--space-3); background: var(--card-raised); border: 1px solid var(--stone); }
+.inv-log-top { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); }
+.inv-log-top code { display: inline-flex; align-items: center; gap: 4px; min-width: 0; overflow-wrap: anywhere; }
+.inv-log-reason { margin: 4px 0 0; font-size: var(--fs-sm); }
+.inv-log-result { margin: 4px 0 0; font: 400 var(--fs-xs) / 1.45 var(--font-mono); color: var(--text-muted); overflow-wrap: anywhere; }
+.log-tool .log-text { color: #b9d97a; }
+.log-tool .log-icon { color: #b9d97a; }
+.log-tool.log-rejected .log-text, .log-tool.log-failed .log-text { color: #ff8a75; }
+
 /* ── Responsive ───────────────────────────────────── */
 @media (max-width: 1100px) {
   .analysis-grid, .network, .chart-row { grid-template-columns: minmax(0, 1fr); }

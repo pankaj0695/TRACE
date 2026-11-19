@@ -158,6 +158,18 @@ def test_approved_egress_is_minimised_logged_and_output_scrubbed(container):
     assert sent not in json.dumps(row)  # ledger never stores content
 
 
+def test_egress_purpose_is_recorded_per_caller(container):
+    inner, llm = governed(container, approved_processors="gemini")
+    asyncio.run(llm.generate_json("s", "p", {}))
+    assert container.governance.ledger.tail(1)[0]["purpose"] == "reviewer_report_drafting"
+    investigator_llm = llm.for_purpose("evidence_investigation")
+    asyncio.run(investigator_llm.generate_json("s", "p", {}))
+    assert container.governance.ledger.tail(1)[0]["purpose"] == "evidence_investigation"
+    assert llm.purpose == "reviewer_report_drafting"  # the report client is unchanged
+    with pytest.raises(ValueError, match="unknown egress purpose"):
+        llm.for_purpose("marketing")
+
+
 def test_pseudonyms_are_stable_and_distinct(container):
     p = container.governance.pseudonyms
     assert p.token("AAA") == p.token("AAA") != p.token("AAB")

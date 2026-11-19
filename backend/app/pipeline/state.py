@@ -1,3 +1,4 @@
+import operator
 from typing import Annotated, TypedDict
 
 from app.domain.models import AgentSignal, Assessment, ProductContext, TrustReport
@@ -13,3 +14,5 @@ class PipelineState(TypedDict, total=False):
     signals: Annotated[dict[str, AgentSignal], merge_signals]
     assessment: Assessment
     report: TrustReport
+    rounds: int  # investigation rounds completed
+    investigation_log: Annotated[list[dict], operator.add]  # every investigator tool call, appended

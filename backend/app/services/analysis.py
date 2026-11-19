@@ -23,7 +23,9 @@ class AnalysisService:
         products: ProductRepository,
         analyses: AnalysisRepository,
         lineage: Callable[[dict], dict] | None = None,
+        escalate: Callable[[dict], bool] | None = None,
     ):
+        self.escalate = escalate
         self.lineage = lineage
         self.pipeline = pipeline
         self.router = router
@@ -79,7 +81,9 @@ class AnalysisService:
         if finished in DETECTORS and all(d in state["signals"] for d in DETECTORS):
             return ["scoring"]
         if finished == "scoring":
-            return ["orchestrator"]
+            return ["investigator" if self.escalate and self.escalate(state) else "orchestrator"]
+        if finished == "investigator":
+            return ["scoring"]
         return []
 
     def _finalize(self, state: dict[str, Any]) -> Analysis:

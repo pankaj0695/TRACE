@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useReducer, useRef } from 'react'
 import { api } from '../api/client'
 import { keys } from '../api/queries'
-import { TOOLS } from '../features/analysis/stages'
+import { investigatorSteps, TOOLS } from '../features/analysis/stages'
 
 const initial = { status: 'idle', stages: {}, error: null, events: [], startedAt: null, finishedAt: null }
 
@@ -35,7 +35,13 @@ function reducer(state, action) {
             ms: action.signal?.duration_ms,
             findings: action.signal?.findings?.length ?? 0,
           }
-      return withEvent({ ...state, stages: { ...state.stages, [action.stage]: next } }, ev)
+      let nextState = withEvent({ ...state, stages: { ...state.stages, [action.stage]: next } }, ev)
+      if (!running && action.stage === 'investigator') {
+        for (const step of investigatorSteps(action.signal)) {
+          nextState = withEvent(nextState, { at: rel, kind: 'tool', stage: 'investigator', status: step.status, text: step.text })
+        }
+      }
+      return nextState
     }
     case 'done':
       return withEvent({ ...state, status: 'done', finishedAt: at }, { at: at - state.startedAt, kind: 'result', stage: null, status: 'ok', text: action.text })

@@ -132,10 +132,13 @@ async def t_run_analysis(ctx: Ctx, a: ProductArgs) -> dict:
     async with ctx.runtime.analysis_slots:
         async for event in ctx.container.analysis.stream(a.product_id):
             if event["event"] == "stage" and event["status"] != "running":
-                done += 1
+                # The investigator stage is optional and loops back to scoring, so the step count varies per run;
+                # keep progress monotonic and below the total until the result arrives.
+                done = min(done + 1, len(STAGES) - 1)
                 await ctx.progress(done, len(STAGES), f"{event['stage']}: {event['status']}")
             elif event["event"] == "result":
                 result = Analysis.model_validate(event["analysis"])
+                await ctx.progress(len(STAGES), len(STAGES), "analysis complete")
             elif event["event"] == "error":
                 raise ToolFailure(event["message"])
     if result is None:

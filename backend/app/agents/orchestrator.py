@@ -23,6 +23,9 @@ POLICY = {
     "review_ring": "Coordinated Inauthentic Behavior",
     "new_account_cohort": "Coordinated Inauthentic Behavior",
     "seller_loyal_reviewers": "Seller Integrity",
+    "investigation_supports_burst": "Review Manipulation",
+    "investigation_explains_burst": "Review Manipulation",
+    "investigation_unresolved": "Manual Review Required",
 }
 ACTION = {
     "volume_spike": "Audit orders behind the review burst window before trusting the rating.",
@@ -35,6 +38,9 @@ ACTION = {
     "review_ring": "Escalate the co-review ring accounts to the abuse team for linkage analysis.",
     "new_account_cohort": "Rate-limit and verify the new-account cohort.",
     "seller_loyal_reviewers": "Request a seller audit for reviewer relationships.",
+    "investigation_supports_burst": "Prioritise the burst-window reviews the investigator cited for removal review.",
+    "investigation_explains_burst": "Check the benign explanation (e.g. a promotion) before acting on the burst.",
+    "investigation_unresolved": "Assign to a human reviewer: automated investigation could not resolve the conflict.",
 }
 _SEVERITY_RANK = {"critical": 0, "high": 1, "medium": 2, "low": 3}
 
@@ -124,12 +130,15 @@ class OrchestratorAgent:
         )
         if failed:
             note += f" Partial analysis: {', '.join(failed)} failed."
+        inv = signals.get("investigator")
+        if inv and inv.status == "ok":
+            note += f" Investigator: {inv.summary}"
         return TrustReport(
             headline=f"{a.tier.value.title()} risk: {findings[0].title}"
             if findings
             else "No material manipulation signals",
             summary=f"The listing scored {a.risk_score:.0f}/100 risk across {len(ctx.reviews)} reviews. "
-            + " ".join(f"{s.summary.rstrip('.')}." for k, s in signals.items() if k in DETECTORS),
+            + " ".join(f"{s.summary.rstrip('.')}." for k, s in signals.items() if k in (*DETECTORS, "investigator")),
             findings=findings[:6],
             recommendations=list(dict.fromkeys(ACTION[c] for c in codes if c in ACTION))[:5]
             or ["No action needed; keep monitoring."],
@@ -152,12 +161,26 @@ class OrchestratorAgent:
             for k, s in signals.items()
             if k in DETECTORS
         }
+        inv = signals.get("investigator")
+        investigation = (
+            {
+                "verdict": inv.metrics.get("verdict"),
+                "risk": inv.risk,
+                "confidence": inv.confidence,
+                "summary": inv.summary,
+                "unresolved_reason": inv.metrics.get("unresolved_reason"),
+                "tools_used": inv.metrics.get("tools_used"),
+            }
+            if inv and inv.status == "ok"
+            else None
+        )
         return (
             f"PRODUCT: {ctx.product.title} | store: {ctx.product.store} | reviews analysed: {len(ctx.reviews)}\n"
             f"ASSESSMENT: {a.model_dump_json()}\n"
             f"AGENT EVIDENCE: {json.dumps(evidence, default=str)}\n"
-            f"POLICY-MAPPED FINDINGS: {json.dumps([f.model_dump() for f in findings])}\n\n"
+            f"POLICY-MAPPED FINDINGS: {json.dumps([f.model_dump() for f in findings])}\n"
+            f"INVESTIGATION (bounded follow-up on ambiguous evidence; null if not escalated): {json.dumps(investigation)}\n\n"
             "Write the brief. headline: one line with the risk tier and main issue. summary: 2-3 sentences. "
             "findings: keep the given findings (you may merge or reword, keep policy/agent/severity accurate), most severe first, max 5. "
-            "recommendations: 2-4 concrete next steps for the reviewer. reviewer_note: mention detector conflicts or partial analysis if any."
+            "recommendations: 2-4 concrete next steps for the reviewer. reviewer_note: mention detector conflicts or partial analysis if any, and the investigation verdict (and its unresolved_reason) if an investigation ran."
         )

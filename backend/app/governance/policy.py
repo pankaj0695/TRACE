@@ -26,6 +26,8 @@ PURPOSES = {
     "policy_review": "Check findings against marketplace policy before a human decision.",
     "quality_assurance": "Validate detector behaviour and data quality.",
     "reviewer_report_drafting": "Draft the reviewer brief with an LLM from minimised evidence.",
+    "evidence_investigation": "Investigator agent: an LLM chooses read-only evidence tools on an ambiguous listing "
+    "and returns a verdict (reviewers appear only as handles r1..rN).",
     "data_subject_request": "Fulfil an access/erasure request from a data subject (ticket reference required).",
     "audit_and_compliance": "Operate the audit trail, retention and governance controls.",
 }
@@ -39,8 +41,10 @@ PROCESSORS = {
     "gemini": {
         "name": "Google Gemini API (Interactions)",
         "purpose": "reviewer_report_drafting",
+        "purposes": ["reviewer_report_drafting", "evidence_investigation"],
         "data_sent": "Aggregated detector evidence, listing title/store, policy findings. Reviewer ids are pseudonymised, "
-        "emails/phones/secrets are redacted before sending.",
+        "emails/phones/secrets are redacted before sending. Investigations also send tool results: burst statistics and "
+        "short (<=160 char), injection-defanged review excerpts keyed by handles (r1..rN), never reviewer ids.",
         "region": "Determined by Google; verify data-residency terms before enterprise use.",
         "requires_approval": True,
     },

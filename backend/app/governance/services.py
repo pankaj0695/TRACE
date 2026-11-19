@@ -32,6 +32,7 @@ class GovernanceServices:
             "quality": product_quality(ctx),
             "agents": {k: {"status": s.status, "duration_ms": s.duration_ms} for k, s in signals.items()},
             "report_generated_by": report.generated_by,
+            "investigation": {"rounds": state.get("rounds", 0), "log": state.get("investigation_log", [])},
             "third_party_processors": ["gemini"] if used_llm else [],
             "approved_processors": sorted(approved_processors(self.settings)),
             "governance": {

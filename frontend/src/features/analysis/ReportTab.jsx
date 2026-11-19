@@ -2,6 +2,7 @@ import { Check, ClipboardCopy, Sparkles, TriangleAlert } from 'lucide-react'
 import { useState } from 'react'
 import { Badge, SeverityBadge } from '../../components/ui'
 import { AGENTS, date } from '../../lib/format'
+import { InvestigationPanel } from './Investigation'
 
 function toText(analysis) {
   const { report, product, assessment } = analysis
@@ -56,6 +57,8 @@ export function ReportTab({ analysis }) {
           </p>
         </div>
       )}
+
+      {analysis.signals.investigator && <InvestigationPanel signal={analysis.signals.investigator} />}
 
       <h3 className="block-title">Findings · mapped to policy</h3>
       {report.findings.length === 0 ? (

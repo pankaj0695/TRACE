@@ -1,5 +1,6 @@
 """Controls on data leaving the system for a third-party LLM: approval, minimisation, ledger, output filtering."""
 
+import copy
 import hashlib
 import hmac
 import logging
@@ -9,7 +10,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from app.data.database import Database
-from app.governance.policy import PROCESSORS, approved_processors
+from app.governance.policy import PROCESSORS, PURPOSES, approved_processors
 from app.llm.client import LLMClient, LLMUnavailable
 from app.mcp.governance import redact_text, scrub
 
@@ -77,8 +78,13 @@ class GovernedLLM:
 
     processor = "gemini"
 
-    def __init__(self, inner: LLMClient, settings, pseudonyms: Pseudonymizer, ledger: EgressLedger):
+    def __init__(
+        self, inner: LLMClient, settings, pseudonyms: Pseudonymizer, ledger: EgressLedger, purpose: str = PURPOSE
+    ):
+        if purpose not in PURPOSES:
+            raise ValueError(f"unknown egress purpose {purpose!r}; declare it in governance.policy.PURPOSES")
         self.inner, self.settings, self.pseudonyms, self.ledger = inner, settings, pseudonyms, ledger
+        self.purpose = purpose
         if self.processor not in approved_processors(settings):
             log.warning(
                 "LLM key is configured but '%s' is not in TRACE_APPROVED_PROCESSORS: reports will be rule-based. "
@@ -89,6 +95,14 @@ class GovernedLLM:
     @property
     def name(self) -> str:
         return self.inner.name
+
+    def for_purpose(self, purpose: str) -> "GovernedLLM":
+        """Same client and controls, but egress is recorded under a different declared purpose."""
+        if purpose not in PURPOSES:
+            raise ValueError(f"unknown egress purpose {purpose!r}; declare it in governance.policy.PURPOSES")
+        clone = copy.copy(self)
+        clone.purpose = purpose
+        return clone
 
     def _blocked_reason(self) -> str | None:
         if self.settings.llm_egress_mode == "off":
@@ -107,7 +121,7 @@ class GovernedLLM:
         return cleaned, redactions
 
     async def generate_json(self, system: str, prompt: str, schema: dict[str, Any]) -> dict[str, Any]:
-        base = {"processor": self.processor, "model": self.inner.name, "purpose": PURPOSE, "data_classes": ["internal"]}
+        base = {"processor": self.processor, "model": self.inner.name, "purpose": self.purpose, "data_classes": ["internal"]}
         reason = self._blocked_reason()
         if reason:
             self._log(base | {"bytes_sent": 0, "redactions": 0, "payload_sha256": "-", "outcome": "blocked", "detail": reason})

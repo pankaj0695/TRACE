@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from app.agents.anomaly import AnomalyAgent
 from app.agents.authenticity import AuthenticityAgent
 from app.agents.ingestion import IngestionAgent
+from app.agents.investigator import InvestigationTools, InvestigatorAgent
 from app.agents.network import NetworkAgent
 from app.agents.orchestrator import OrchestratorAgent
 from app.agents.scoring import TrustScoringAgent
@@ -98,6 +99,17 @@ def build_container(settings: Settings) -> Container:
         llm = GovernedLLM(llm, settings, governance.pseudonyms, governance.ledger)
 
     orchestrator = OrchestratorAgent(llm, settings.min_reviews)
+    search = ReviewSearch(index, embedder, reviews, products)
+    investigator = (
+        InvestigatorAgent(
+            llm.for_purpose("evidence_investigation") if isinstance(llm, GovernedLLM) else llm,
+            InvestigationTools(graph, embedder, search),
+            max_tool_calls=settings.investigation_max_tool_calls,
+            max_rounds=settings.investigation_max_rounds,
+        )
+        if settings.investigation_enabled and settings.investigation_max_rounds > 0
+        else None
+    )
     pipeline = build_pipeline(
         IngestionAgent(products, reviews, products.baselines()),
         AnomalyAgent(),
@@ -105,6 +117,7 @@ def build_container(settings: Settings) -> Container:
         NetworkAgent(graph),
         TrustScoringAgent(),
         orchestrator,
+        investigator,
     )
     return Container(
         settings=settings,
@@ -115,7 +128,14 @@ def build_container(settings: Settings) -> Container:
         index=index,
         embedder=embedder,
         llm=llm,
-        analysis=AnalysisService(pipeline, orchestrator.route, products, analyses, governance.lineage),
-        search=ReviewSearch(index, embedder, reviews, products),
+        analysis=AnalysisService(
+            pipeline,
+            orchestrator.route,
+            products,
+            analyses,
+            governance.lineage,
+            escalate=investigator.should_escalate if investigator else None,
+        ),
+        search=search,
         governance=governance,
     )
