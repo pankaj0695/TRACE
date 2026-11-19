@@ -58,7 +58,7 @@ export function ProductTable() {
               ))}
             {data?.items.map(({ product, scan }) => (
               <tr key={product.id} className="row-link" onClick={() => navigate.product(product.id)}>
-                <td>
+                <td data-label="Listing">
                   <div className="listing-cell">
                     <ProductThumb product={product} />
                     <div className="listing-text">
@@ -71,16 +71,16 @@ export function ProductTable() {
                     </div>
                   </div>
                 </td>
-                <td className="num">{compact(product.review_count)}</td>
-                <td className="num">
+                <td data-label="Reviews" className="num">{compact(product.review_count)}</td>
+                <td data-label="Burst" className="num">
                   <span className={product.spike_ratio >= 10 ? 'burst burst-hot' : 'burst'}>{product.spike_ratio.toFixed(1)}×</span>
                 </td>
-                <td className="num">
+                <td data-label="Rating" className="num">
                   <span className="rating">
                     <Star size={14} aria-hidden /> {product.avg_rating?.toFixed(1) ?? '—'}
                   </span>
                 </td>
-                <td>
+                <td data-label="Risk">
                   {scan ? (
                     <span className="risk-cell">
                       <TierBadge tier={scan.tier} size="sm" />
@@ -90,7 +90,7 @@ export function ProductTable() {
                     <span className="muted">Not scanned</span>
                   )}
                 </td>
-                <td className="muted">{relative(scan?.created_at)}</td>
+                <td data-label="Last scan" className="muted">{relative(scan?.created_at)}</td>
                 <td className="row-action">
                   <ArrowRight size={18} aria-hidden />
                 </td>

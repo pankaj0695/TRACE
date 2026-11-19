@@ -7,6 +7,7 @@ import { useAnalysisRun } from '../../hooks/useAnalysisRun'
 import { compact } from '../../lib/format'
 import { ProductThumb } from '../console/ProductTable'
 import { AgentPipeline } from './AgentPipeline'
+import { ExecutionTab } from './ExecutionTab'
 import { LanguageTab } from './LanguageTab'
 import { NetworkTab } from './NetworkTab'
 import { ReportTab } from './ReportTab'
@@ -19,6 +20,7 @@ const TABS = [
   { id: 'signals', label: 'Signals' },
   { id: 'network', label: 'Reviewer graph' },
   { id: 'language', label: 'Language' },
+  { id: 'trace', label: 'Execution' },
 ]
 
 function TabPanel({ tab, analysis }) {
@@ -38,9 +40,15 @@ export function AnalysisPage({ productId }) {
   const { data: product, isError } = useProduct(productId)
   const { data: analysis, isLoading } = useLatestAnalysis(productId)
   const run = useAnalysisRun(productId)
-  const [tab, setTab] = useState('report')
+  const [picked, setPicked] = useState(null)
   const running = run.status === 'running'
   const { start } = run
+  // Follow the run while it is live (and stay on its log afterwards); otherwise open on the report.
+  const tab = picked ?? (run.events.length > 0 || !analysis ? 'trace' : 'report')
+  const begin = () => {
+    setPicked('trace')
+    start()
+  }
 
   useEffect(() => {
     if (!isLoading && analysis === null && run.status === 'idle') start()
@@ -78,7 +86,7 @@ export function AnalysisPage({ productId }) {
             </div>
           )}
         </div>
-        <Button variant="primary" icon={RefreshCw} onClick={start} disabled={running}>
+        <Button variant="primary" icon={RefreshCw} onClick={begin} disabled={running}>
           {running ? 'Analysing…' : analysis ? 'Re-run analysis' : 'Run analysis'}
         </Button>
       </header>
@@ -87,27 +95,27 @@ export function AnalysisPage({ productId }) {
         <div className="callout callout-danger" role="alert">
           <TriangleAlert size={18} aria-hidden />
           <p>{run.error}</p>
-          <button className="text-btn" onClick={start}>Retry</button>
+          <button className="text-btn" onClick={begin}>Retry</button>
         </div>
       )}
 
       <div className="analysis-grid">
         <div className="analysis-side">
           <ScoreCard analysis={analysis} running={running} />
-          <AgentPipeline stages={stageState(run, analysis)} running={running} />
+          <AgentPipeline stages={stageState(run, analysis)} running={running} startedAt={run.startedAt} />
         </div>
 
         <section className="workspace">
           <div className="tabs" role="tablist">
             {TABS.map((t) => (
-              <button key={t.id} role="tab" aria-selected={tab === t.id} className="tab" onClick={() => setTab(t.id)}>
+              <button key={t.id} role="tab" aria-selected={tab === t.id} className="tab" onClick={() => setPicked(t.id)}>
                 {t.label}
                 {tab === t.id && <motion.span layoutId="tab-underline" className="tab-underline" />}
               </button>
             ))}
           </div>
-          <div className={`workspace-body ${running && analysis ? 'is-stale' : ''}`}>
-            {analysis ? (
+          <div className={`workspace-body ${running && analysis && tab !== 'trace' ? 'is-stale' : ''}`}>
+            {analysis || run.events.length > 0 ? (
               <AnimatePresence mode="wait">
                 <motion.div
                   key={tab}
@@ -116,16 +124,18 @@ export function AnalysisPage({ productId }) {
                   exit={{ opacity: 0, y: -4 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <TabPanel tab={tab} analysis={analysis} />
+                  {tab === 'trace' ? (
+                    <ExecutionTab run={run} analysis={analysis} running={running} onOpenReport={() => setPicked('report')} />
+                  ) : analysis ? (
+                    <TabPanel tab={tab} analysis={analysis} />
+                  ) : null}
                 </motion.div>
               </AnimatePresence>
             ) : (
               <div className="waiting">
                 <Skeleton w="70%" h={28} />
                 <Skeleton w="95%" />
-                <Skeleton w="88%" />
                 <Skeleton w="40%" />
-                <p className="muted">The orchestrator is routing this listing through the detection agents. Results stream in as each agent finishes.</p>
               </div>
             )}
           </div>
