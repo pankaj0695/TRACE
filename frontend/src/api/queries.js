@@ -8,6 +8,7 @@ export const keys = {
   product: (id) => ['product', id],
   analysis: (id) => ['analysis', id],
   search: (q) => ['search', q],
+  testPlan: (profile) => ['test-plan', profile],
 }
 
 export const useHealth = () => useQuery({ queryKey: keys.health, queryFn: api.health, staleTime: 60_000 })
@@ -28,3 +29,5 @@ export const useLatestAnalysis = (id) =>
 
 export const useReviewSearch = (q) =>
   useQuery({ queryKey: keys.search(q), queryFn: () => api.searchReviews(q), enabled: q.trim().length >= 2, placeholderData: keepPreviousData })
+
+export const useTestPlan = (profile) => useQuery({ queryKey: keys.testPlan(profile), queryFn: () => api.testPlan(profile), staleTime: Infinity })

@@ -3,6 +3,7 @@ import { TopBar } from './components/TopBar'
 import { AnalysisPage } from './features/analysis/AnalysisPage'
 import { ConsolePage } from './features/console/ConsolePage'
 import { SearchPage } from './features/search/SearchPage'
+import { TestsPage } from './features/tests/TestsPage'
 import { useHashRoute } from './hooks/useHashRoute'
 
 export default function App() {
@@ -17,6 +18,8 @@ export default function App() {
           <motion.div key={key} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
             {section === 'product' && id ? (
               <AnalysisPage productId={id} />
+            ) : section === 'tests' ? (
+              <TestsPage />
             ) : section === 'search' && params.q ? (
               <SearchPage query={params.q} />
             ) : (

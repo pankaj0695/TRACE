@@ -1,5 +1,6 @@
 // Dev: Vite proxies /api to the backend. Production: set VITE_API_URL to the Cloud Run URL.
 const BASE = `${(import.meta.env.VITE_API_URL || '').replace(/\/$/, '')}/api`
+export const API_BASE = BASE
 
 export class ApiError extends Error {
   constructor(status, message) {
@@ -27,4 +28,5 @@ export const api = {
   searchReviews: (q, k = 20) => request('/search/reviews', { q, k }),
   exportUrl: `${BASE}/analyses/export.csv`,
   streamUrl: (id) => `${BASE}/products/${id}/analysis/stream`,
+  testPlan: (profile) => request('/system-tests/plan', { profile }),
 }

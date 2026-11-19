@@ -9,6 +9,7 @@ from app.api.routes import router
 from app.container import DatasetMissing, build_container
 from app.core.config import Settings, get_settings
 from app.mcp.http import create_mcp_router
+from app.testing.routes import router as system_tests_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger(__name__)
@@ -39,6 +40,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         expose_headers=["Mcp-Session-Id"],
     )
     app.include_router(router)
+    app.include_router(system_tests_router)
     if settings.mcp_enabled:
         app.include_router(create_mcp_router(settings))
     return app

@@ -1,4 +1,4 @@
-import { Bot, CornerDownLeft, Network, Search } from 'lucide-react'
+import { Bot, CornerDownLeft, FlaskConical, Network, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useHealth } from '../api/queries'
 import { navigate } from '../hooks/useHashRoute'
@@ -84,6 +84,9 @@ export function TopBar({ section, searchQuery }) {
           <span className={`dot ${health?.llm === 'disabled' ? 'dot-warn' : 'dot-ok'}`} />
           {health ? (health.llm === 'disabled' ? 'rules only' : health.llm) : '…'}
         </span>
+        <a href="#/tests" className={`nav-link ${section === 'tests' ? 'nav-link-active' : ''}`} aria-label="System tests">
+          <FlaskConical size={18} aria-hidden /> <span className="nav-label">Tests</span>
+        </a>
         <span className="avatar" aria-label="Signed in as S G">SG</span>
       </div>
     </header>

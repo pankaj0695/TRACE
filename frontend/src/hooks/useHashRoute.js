@@ -19,4 +19,5 @@ export const navigate = {
   console: () => (window.location.hash = '#/'),
   product: (id) => (window.location.hash = `#/product/${encodeURIComponent(id)}`),
   search: (q) => (window.location.hash = `#/search?${new URLSearchParams({ q })}`),
+  tests: () => (window.location.hash = '#/tests'),
 }

@@ -62,6 +62,13 @@ class Authenticator:
     def configured(self) -> bool:
         return bool(self._keys)
 
+    def add_ephemeral(self, token: str, principal: Principal) -> None:
+        """Register a short-lived in-process credential (used by the system-test runner; never persisted)."""
+        self._keys.append((token, principal))
+
+    def remove_ephemeral(self, token: str) -> None:
+        self._keys = [(t, p) for t, p in self._keys if t != token]
+
     def authenticate(self, authorization: str | None) -> Principal | None:
         if authorization and authorization.lower().startswith("bearer "):
             presented = authorization[7:].strip().encode()
